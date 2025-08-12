@@ -1,0 +1,181 @@
+openapi: 3.0.3
+info:
+  title: Approved Medical Sources API
+  description: API for accessing approved medical sources and information
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@approved-med-sources-api.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://approved-med-sources-api.vercel.app
+    description: Production server
+  - url: http://localhost:3000
+    description: Development server
+
+paths:
+  /api/search:
+    get:
+      summary: Search medical sources
+      description: Search for medical sources based on query parameters
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query string
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by category (e.g., research, clinical_trials)
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  query:
+                    type: string
+                  sources:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MedicalSource'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/fetch:
+    get:
+      summary: Fetch content from URL
+      description: Fetch content from a specified medical source URL
+      parameters:
+        - name: url
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+          description: URL to fetch content from
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: string
+                    description: Fetched content
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+  /api/resolve:
+    get:
+      summary: Resolve source details
+      description: Get detailed information about a medical source by ID
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Source ID to resolve
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicalSourceDetails'
+        '400':
+          description: Bad request
+        '404':
+          description: Source not found
+        '500':
+          description: Internal server error
+
+components:
+  schemas:
+    MedicalSource:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the source
+        name:
+          type: string
+          description: Name of the medical source
+        url:
+          type: string
+          format: uri
+          description: URL of the source
+        description:
+          type: string
+          description: Description of the source
+      required:
+        - id
+        - name
+        - url
+
+    MedicalSourceDetails:
+      allOf:
+        - $ref: '#/components/schemas/MedicalSource'
+        - type: object
+          properties:
+            type:
+              type: string
+              description: Type of medical source
+            lastUpdated:
+              type: string
+              format: date-time
+              description: Last update timestamp
+            verified:
+              type: boolean
+              description: Whether the source is verified
+            categories:
+              type: array
+              items:
+                type: string
+              description: Categories this source belongs to
+            metadata:
+              type: object
+              properties:
+                publisher:
+                  type: string
+                impact_factor:
+                  type: string
+                peer_reviewed:
+                  type: boolean
+              description: Additional metadata about the source
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        details:
+          type: string
+          description: Additional error details
+      required:
+        - error
